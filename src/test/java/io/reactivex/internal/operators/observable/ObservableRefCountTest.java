@@ -14,7 +14,6 @@
 package io.reactivex.internal.operators.observable;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import org.junit.Test;
+import org.junit.*;
 import org.mockito.InOrder;
 
 import io.reactivex.*;
@@ -42,6 +41,27 @@ import io.reactivex.schedulers.*;
 import io.reactivex.subjects.*;
 
 public class ObservableRefCountTest {
+
+    // This will undo the workaround so that the plain ObservablePublish is still
+    // tested.
+    @Before
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void before() {
+        RxJavaPlugins.setOnConnectableObservableAssembly(new Function<ConnectableObservable, ConnectableObservable>() {
+            @Override
+            public ConnectableObservable apply(ConnectableObservable co) throws Exception {
+                if (co instanceof ObservablePublishAlt) {
+                    return ObservablePublish.create(((ObservablePublishAlt)co).source());
+                }
+                return co;
+            }
+        });
+    }
+
+    @After
+    public void after() {
+        RxJavaPlugins.setOnConnectableObservableAssembly(null);
+    }
 
     @Test
     public void testRefCountAsync() {
